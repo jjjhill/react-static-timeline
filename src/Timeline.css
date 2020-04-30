@@ -1,6 +1,6 @@
 .timeline {
   width: 100%;
-  margin-bottom: 15px; /*causes the dates to stay in the container*/
+  margin-bottom: 15px; /*allows the years to be in the container*/
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -8,7 +8,7 @@
 }
 
 .grid-lines {
-  border-bottom: solid 1px white;
+  border-bottom: solid 1px;
   display: flex;
   flex-direction: row;
   width: 100%;
@@ -17,7 +17,7 @@
 .major {
   flex: 1;
   height: 20px;
-  border-right: solid 1px white;
+  border-right: solid 1px;
   display: flex;
   flex-direction: row;
   align-items: flex-end;
@@ -25,7 +25,7 @@
 }
 
 .major:first-child {
-  border-left: solid 1px white;
+  border-left: solid 1px;
 }
 
 .major > .minor {
@@ -34,31 +34,27 @@
 }
 
 .major > .minor:first-child {
-  border-right: solid 1px white;
+  border-right: solid 1px;
 }
 
 .major > .minor:nth-child(3) {
-  border-left: solid 1px white;
+  border-left: solid 1px;
 }
 
 .year {
   position: absolute;
   bottom: -5px;
   transform: translateY(100%);
-  color: white;
   font-size: 11px;
 }
 
 .speech-bubble {
   padding: 5px;
-  background-color: rgba(22, 22, 22, 0.4);
   border-radius: 10px;
   display: flex;
   flex-direction: column;
-  font-family: sans-serif;
   position: relative;
   transform: translateX(-50%) scaleY(0);
-  transition: transform 150ms ease-out;
   transform-origin: bottom;
 }
 
@@ -69,12 +65,10 @@
   width: 0;
   transform: translateX(-50%) scaleY(0);
   transform-origin: top;
-  transition: transform 150ms ease;
 }
 
 .event {
   position: absolute;
-  border-top: solid 6px;
   bottom: 0;
   transform-origin: top;
   transition: background-color 500ms ease;
@@ -94,8 +88,11 @@
   text-align: center;
   font-size: 22px;
   margin: 0;
+  margin-top: 2px;
+  margin-bottom: 5px;
 }
 
 .speech-bubble p {
   color: white;
+  margin: 7px;
 }

@@ -1,0 +1,38 @@
+.App {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #082f4e;
+}
+
+.timeline-container {
+  height: 300px;
+  width: 600px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  position: relative;
+}
+
+.summary {
+  font-size: 14px;
+  margin: 3px;
+  margin-left: 5px;
+  text-align: left;
+}
+
+.technologies {
+  color: white;
+  margin: 5px;
+  font-size: 11px;
+  text-align: right;
+}
+
+@font-face {
+  font-family: 'ArchivoNarrowRegular';
+  src: url('../assets/fonts/ArchivoNarrow-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
