@@ -1,9 +1,8 @@
 {
   "name": "react-static-timeline",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A static horizontal timeline with hovering functionality",
   "author": "Josh Hill",
-  "main": "dist/Timeline.js",
   "module": "dist/Timeline.es.js",
   "license": "MIT",
   "scripts": {
