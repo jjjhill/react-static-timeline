@@ -84,10 +84,10 @@ export default function Timeline(props) {
     popupWidth,
     lineThickness
   } = props
-  // seperated hoveredId and popupEventId. hoveredId for making the
-  // hovering events more responsive. popupEventId for popup delay.
+  // seperated hoveredId and displayedEventId. hoveredId for making the
+  // hovering events more responsive. displayedEventId for popup delay.
   const [hoveredId, setHoveredId] = useState(-1)
-  const [popupEventId, setPopupEventId] = useState(-1)
+  const [displayedEventId, setDisplayedEventId] = useState(-1)
   const [hoveredColor, setHoveredColor] = useState(null)
   const [firstYear, setFirstYear] = useState(null)
   const [lastYear, setLastYear] = useState(null)
@@ -142,7 +142,7 @@ export default function Timeline(props) {
   let eventHover = (i, leftPct, rightPct, color) => {
     if (!isInteractive) return //no op
     const openPopup = () => {
-      setPopupEventId(i)
+      setDisplayedEventId(i)
       let midPoint = (r+l)/2
       setArrowPos(midPoint)
       setOpen(true)
@@ -158,9 +158,9 @@ export default function Timeline(props) {
       openPopup()
       return
     }
-    if (popupEventId < 0) {
+    if (displayedEventId < 0) {
       // eventId needs to be >=0 in order to show popup animation
-      setPopupEventId(0)
+      setDisplayedEventId(0)
       props.onEventDisplay(0, l, r, color)
     }
     if (open) setOpen(false)
@@ -170,7 +170,7 @@ export default function Timeline(props) {
 
   let mouseLeave = () => {
     if (!isInteractive) return //no op
-    setPopupEventId(-1)
+    setDisplayedEventId(-1)
     eventHover(-1)
     if (props.onMouseLeave) props.onMouseLeave()
   }
@@ -298,10 +298,10 @@ export default function Timeline(props) {
     })
   }
 
-  let event = events[popupEventId]
+  let event = events[displayedEventId]
   return (
     <div onMouseLeave={mouseLeave} ref={ref} style={{ fontFamily: 'sans-serif', ...props.style}}>
-      { popupEnabled && popupEventId >= 0 && <div>
+      { popupEnabled && displayedEventId >= 0 && <div>
         <div
           className='speech-bubble'
           style={{
@@ -315,7 +315,7 @@ export default function Timeline(props) {
           {customPopupContent ?
             customPopupContent() :
             (<div>
-              <div className='line' style={{ backgroundColor: event.color || defaultColors[popupEventId % defaultColors.length] }} />
+              <div className='line' style={{ backgroundColor: event.color || defaultColors[displayedEventId % defaultColors.length] }} />
               <h1>{event.title}</h1>
               <p className='summary'>{event.summary}</p>
             </div>)
