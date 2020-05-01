@@ -75,7 +75,7 @@ The `Timeline` component will fill the width of its container, and its height st
   where eventId is the index of the selected event in the provided `events` array. leftPct is the distance from the left side of the the Timeline's container to the left side of the event line, as a percentage of the container's width. rightPct is the distance from the left side of the the Timeline's container to the right side of the event line, as a percentage of the container's width. Color is the color of the event line that was hovered. leftPct and rightPct is explained visually here:
   ![](https://raw.githubusercontent.com/jjjhill/react-static-timeline/master/demo/pct_explanation.png)
 
-- `props.onMouseLeave` - function | optional | callback function which is executed when the users cursor leaves the Timeline element.
+- `props.onMouseLeave` - function | optional | callback function which is executed when the users cursor leaves the Timeline component.
 - `props.popupEnabled` - boolean | optional | (default `true`) | When true, the popup will show when the user hovers over events.
 - `props.customPopupContent` - function | optional | A function that returns a JSX element (or HTML element) to be displayed in the popup instead of the default content. The popup bubble style will remain the same. To make a completely custom popup, see the section "Completely custom popup" below.
 - `props.eventGap` - number | optional | (default `15`) | The vertical gap (in px) between each 'level' of events on the timeline.
@@ -116,7 +116,7 @@ return (
 
 ## Completely custom popup
 
-If you don't want to use the default popup altogether, set props.popupEnabled to false. Then, using the props.onEventDisplay callback, you can whatever you want. The function provides the leftPct and rightPct which you can use to position something within the container, directly above/below the event that was hovered.
+If you don't want to use the default popup altogether, set props.popupEnabled to false. Then, using the props.onEventDisplay callback, you can do whatever you want. The function provides the leftPct and rightPct which you can use to position something within the container, directly above/below the event that was hovered.
 
 Example here:
 
