@@ -6,7 +6,7 @@
 
 A creative way to display your personal timeline on your webpage.
 
-![](demo/timeline_demo.gif)
+![](https://raw.githubusercontent.com/jjjhill/react-static-timeline/master/demo/timeline_demo.gif)
 
 ## Install
 
@@ -73,7 +73,7 @@ The `Timeline` component will fill the width of its container, and its height st
     props.onEventDisplay(eventId, leftPct, rightPct, color)
   ```
   where eventId is the index of the selected event in the provided `events` array. leftPct is the distance from the left side of the the Timeline's container to the left side of the event line, as a percentage of the container's width. rightPct is the distance from the left side of the the Timeline's container to the right side of the event line, as a percentage of the container's width. Color is the color of the event line that was hovered. leftPct and rightPct is explained visually here:
-  ![](demo/pct_explanation.png)
+  ![](https://raw.githubusercontent.com/jjjhill/react-static-timeline/master/demo/pct_explanation.png)
 
 - `props.onMouseLeave` - function | optional | callback function which is executed when the users cursor leaves the Timeline element.
 - `props.popupEnabled` - boolean | optional | (default `true`) | When true, the popup will show when the user hovers over events.
