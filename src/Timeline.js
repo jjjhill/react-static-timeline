@@ -1,33 +1,9 @@
-/*
-  todo:
-    determine API (props).
-      events
-      isInteractive  (optional | default true)
-      onEventDisplay  (optional)
-      onMouseLeave  (optional)
-      popupEnabled  (optional | default true)
-      customPopupContent  (optional)
-      eventGap  (optional | default 15)
-      timelineColor  (optional)
-      popupDelay  (optional)
-      popupBackgroundColor  (optional)
-
-      event: {
-        title: '', (optional - to display on default popup)
-        summary: '', (optional - to display on default popup)
-        start: { year: 0, month: [0-12] },
-        end: { year: 0, month: [0-12] },
-        color: '#hex', (optional)
-      }
-    propogate style prop to outermost div of Timeline.
-*/
-
 import React, { useState, useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
 import './Timeline.css'
 
 Timeline.propTypes = {
-  events: PropTypes.arrayOf(
+  items: PropTypes.arrayOf(
     PropTypes.shape({
       start: PropTypes.shape({
         year: PropTypes.number.isRequired,
@@ -42,27 +18,29 @@ Timeline.propTypes = {
       color: PropTypes.string
     })
   ).isRequired,
+  numSegments: PropTypes.number,
   isInteractive: PropTypes.bool,
-  onEventDisplay: PropTypes.func,
+  onItemDisplay: PropTypes.func,
   onMouseLeave: PropTypes.func,
-  eventGap: PropTypes.number,
+  verticalGap: PropTypes.number,
   timelineColor: PropTypes.string,
   popupEnabled: PropTypes.bool,
   popupBackgroundColor: PropTypes.string,
   popupDelay: PropTypes.number,
   popupWidth: PropTypes.number,
-  customPopupContent: PropTypes.func,
+  customPopupContent: PropTypes.element,
   lineThickness: PropTypes.number,
   style: PropTypes.object
 }
 
 Timeline.defaultProps = {
+  numSegments: 3,
   isInteractive: true,
   popupEnabled: true,
-  onEventDisplay: () => {},
+  onItemDisplay: () => {},
   onMouseLeave: () => {},
   customPopupContent: null,
-  eventGap: 15,
+  verticalGap: 15,
   timelineColor: 'black',
   popupBackgroundColor: 'rgba(22, 22, 22, 0.4)',
   popupDelay: 100,
@@ -73,22 +51,22 @@ Timeline.defaultProps = {
 
 export default function Timeline(props) {
   const {
-    events,
+    items,
+    numSegments,
     isInteractive,
     popupEnabled,
     customPopupContent,
-    eventGap,
+    verticalGap,
     timelineColor,
     popupBackgroundColor,
     popupDelay,
     popupWidth,
     lineThickness
   } = props
-  // seperated hoveredId and displayedEventId. hoveredId for making the
-  // hovering events more responsive. displayedEventId for popup delay.
+  // seperated hoveredId and displayedItemId. hoveredId for making the
+  // hovering items more responsive. displayedItemId for popup delay.
   const [hoveredId, setHoveredId] = useState(-1)
-  const [displayedEventId, setDisplayedEventId] = useState(-1)
-  const [hoveredColor, setHoveredColor] = useState(null)
+  const [displayedItemId, setDisplayedItemId] = useState(-1)
   const [firstYear, setFirstYear] = useState(null)
   const [lastYear, setLastYear] = useState(null)
   const [levels, setLevels] = useState([])
@@ -106,9 +84,9 @@ export default function Timeline(props) {
     '#ffa48e', 
     'bf00ff'
   ]
-  let timeoutRef = useRef() // to persist across re-renders
+  const timeoutRef = useRef() // to persist across re-renders
 
-  let hexToRgb = hex => {
+  const hexToRgb = hex => {
     var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
     return result
       ? {
@@ -119,14 +97,14 @@ export default function Timeline(props) {
       : null
   }
 
-  let intervalOverlaps = (event1, event2) => {
-    let s1 = event1.start.year*12 + event1.start.month
-    let s2 = event2.start.year*12 + event2.start.month
+  const intervalOverlaps = (item1, item2) => {
+    let s1 = item1.start.year*12 + item1.start.month
+    let s2 = item2.start.year*12 + item2.start.month
     let min = Math.min(s1,s2)
     s1-=min
     s2-=min
-    let e1 = event1.end.year*12 + event1.end.month - min
-    let e2 = event2.end.year*12 + event2.end.month - min
+    let e1 = item1.end.year*12 + item1.end.month - min
+    let e2 = item2.end.year*12 + item2.end.month - min
     // ensure s1 is <= s2 to make the boolean logic cleaner
     if (s2 < s1) {
       let tempS = s1
@@ -139,47 +117,54 @@ export default function Timeline(props) {
     return s2 >= s1 && s2 < e1
   }
 
-  let eventHover = (i, leftPct, rightPct, color) => {
+  const validate = (item) => {
+    if (item.start.month < 0 || item.start.month > 12) {
+      console.error("month input to react-static-timeline needs to be between 0 and 12")
+    }
+  }
+
+  const itemHover = (i, leftPct, rightPct, color) => {
     if (!isInteractive) return //no op
+
     const openPopup = () => {
-      setDisplayedEventId(i)
+      setDisplayedItemId(i)
       let midPoint = (r+l)/2
       setArrowPos(midPoint)
       setOpen(true)
-      props.onEventDisplay(i, l, r, color)
+      props.onItemDisplay(i, l, r, color)
     }
 
     if (i === hoveredId) return
     let l = leftPct
     let r = 100-rightPct
     setHoveredId(i)
-    setHoveredColor(color)
     if (!popupEnabled || popupDelay === 0) {
       openPopup()
       return
     }
-    if (displayedEventId < 0) {
-      // eventId needs to be >=0 in order to show popup animation
-      setDisplayedEventId(0)
-      props.onEventDisplay(0, l, r, color)
+    if (displayedItemId < 0) {
+      openPopup()
+      return
     }
     if (open) setOpen(false)
     if(timeoutRef.current) clearTimeout(timeoutRef.current)
     timeoutRef.current = setTimeout(openPopup, popupDelay)
   }
 
-  let mouseLeave = () => {
+  const mouseLeave = () => {
     if (!isInteractive) return //no op
-    setDisplayedEventId(-1)
-    eventHover(-1)
+    setHoveredId(-1)
+    setOpen(false)
+    if(timeoutRef.current) clearTimeout(timeoutRef.current)
+    timeoutRef.current = setTimeout(() => setDisplayedItemId(-1), popupDelay)
     if (props.onMouseLeave) props.onMouseLeave()
   }
 
   useEffect(() => {
-    let timelineWidth = ref.current ? ref.current.offsetWidth : 0
-    let arrowPx = arrowPos/100*timelineWidth
-    let minPx = popupWidth/2
-    let maxPx = timelineWidth - popupWidth/2
+    const timelineWidth = ref.current ? ref.current.offsetWidth : 0
+    const arrowPx = arrowPos/100*timelineWidth
+    const minPx = popupWidth/2
+    const maxPx = timelineWidth - popupWidth/2
     if (arrowPx < minPx) {
       setPopupPos(minPx/timelineWidth*100)
     }
@@ -192,20 +177,21 @@ export default function Timeline(props) {
   }, [ref.current, arrowPos]);
 
   useEffect(() => {
-    let conflicts = {}
+    const conflicts = {}
     let fy, ly
-    events.forEach((event, i, a) => {
-      if (!fy || event.start.year <= fy) {
-        fy = event.start.year
+    items.forEach((item, i, a) => {
+      validate(item)
+      if (!fy || item.start.year <= fy) {
+        fy = item.start.year
       }
-      if (!ly || event.end.year >= ly) {
-        ly = event.end.year
+      if (!ly || item.end.year >= ly) {
+        ly = item.end.year
       }
 
       conflicts[i] = []
       for (let j=0; j < a.length; j++) {
         if (j===i) continue
-        if (intervalOverlaps(event,a[j])) {
+        if (intervalOverlaps(item,a[j])) {
           conflicts[i].push(j)
         }
       }
@@ -214,42 +200,43 @@ export default function Timeline(props) {
     setFirstYear(fy)
     setLastYear(ly)
 
-    let order = Object.keys(conflicts).map(eventId => ({
-      eventId: parseInt(eventId)
+    let order = Object.keys(conflicts).map(itemId => ({
+      itemId: parseInt(itemId)
     })).sort((a,b) => {
-      let eventA = events[a.eventId]
-      let eventB = events[b.eventId]
-      let spanA = (eventA.end.year*12+eventA.end.month) - (eventA.start.year*12+eventA.start.month)
-      let spanB = (eventB.end.year*12+eventB.end.month) - (eventB.start.year*12+eventB.start.month)
+      let itemA = items[a.itemId]
+      let itemB = items[b.itemId]
+      let spanA = (itemA.end.year*12+itemA.end.month) - (itemA.start.year*12+itemA.start.month)
+      let spanB = (itemB.end.year*12+itemB.end.month) - (itemB.start.year*12+itemB.start.month)
       return spanA - spanB
     })
 
-    let added = {}
-    let levelsArray = [[]] // each level is array of eventIds
+    const added = {}
+    const levelsArray = [[]] // each level is array of itemIds
     let i = 0
     let loopCounter = 0
 
     while(order.length !== Object.keys(added).length) {
       loopCounter++
+      // safeguard to prevent infinite loops, hanging webpage
       if (loopCounter > 5000) {
         console.error(`react-static-timeline component must not be working with these parameters.
-          The other option is you have over 5000 events on the timeline, which is not supported.
+          The other option is you have over 5000 items on the timeline, which is not supported.
           Please submit an issue to https://github.com/jjjhill/react-static-timeline`)
         break
       }
       if (levelsArray.length-1 < i) levelsArray.push([])
       let nextToAdd = null
       for (let j=0; j < order.length; j++) {
-        if (added[order[j].eventId]) continue
+        if (added[order[j].itemId]) continue
         if (!levelsArray[i].length) {
-          nextToAdd = order[j].eventId
+          nextToAdd = order[j].itemId
           break
         }
-        let currId = order[j].eventId
-        if (!levelsArray[i].some(event => {
-          return conflicts[event].indexOf(currId) > -1
+        let currId = order[j].itemId
+        if (!levelsArray[i].some(item => {
+          return conflicts[item].indexOf(currId) > -1
         })) {
-          nextToAdd = order[j].eventId
+          nextToAdd = order[j].itemId
           break
         }
       }
@@ -261,47 +248,51 @@ export default function Timeline(props) {
       i++
     }
     setLevels(levelsArray)
-    setContainerHeight(levelsArray.length*eventGap + 21)
-  }, [eventGap])
+  }, [items])
+
+  useEffect(() => {
+    setContainerHeight(levels.length*verticalGap + 21)
+  }, [levels, verticalGap])
 
 
   let numYears = lastYear - firstYear + 1
   let totalMonths = numYears * 12
-  let eventLines = []
+  let itemNodes = []
 
   for (let i=0; i < levels.length; i++) {
-    levels[i].forEach(eventId => {
-      let event = events[eventId]
-      let startN = (event.start.year - firstYear) * 12 + event.start.month
-      let endN = (event.end.year - firstYear) * 12 + event.end.month
+    levels[i].forEach(itemId => {
+      let item = items[itemId]
+      let startN = (item.start.year - firstYear) * 12 + item.start.month
+      let endN = (item.end.year - firstYear) * 12 + item.end.month
       let leftPct = (startN / totalMonths) * 100
       let rightPct = ((totalMonths - endN) / totalMonths) * 100
 
-      let clr = event.color || defaultColors[eventId % defaultColors.length]
+      let clr = item.color || defaultColors[itemId % defaultColors.length]
       let { r, g, b } = hexToRgb(clr)
-      eventLines.push(
+      itemNodes.push(
         <div
-          key={eventId}
-          className='event'
+          key={itemId}
+          className='item'
           style={{
             zIndex: 10-i,
-            top: eventGap*(levels.length-i-1),
+            top: verticalGap*(levels.length-i-1),
             left: leftPct + '%',
             right: rightPct + '%',
             borderTop: `solid ${lineThickness}px`,
             borderColor: `rgb(${r}, ${g}, ${b})`,
-            backgroundColor:  hoveredId === eventId ? `rgba(${r},${g},${b},0.2)` : 'transparent'
+            backgroundColor:  hoveredId === itemId ? `rgba(${r},${g},${b},0.2)` : 'transparent'
           }}
-          onMouseEnter={() => eventHover(eventId, leftPct, rightPct, clr)}
+          onMouseEnter={() => itemHover(itemId, leftPct, rightPct, clr)}
         />
       )
     })
   }
 
-  let event = events[displayedEventId]
+  let item = displayedItemId >= 0 ? items[displayedItemId] : {}
+
   return (
-    <div onMouseLeave={mouseLeave} ref={ref} style={{ fontFamily: 'sans-serif', ...props.style}}>
-      { popupEnabled && displayedEventId >= 0 && <div>
+    <div onMouseLeave={mouseLeave} ref={ref} style={{ ...props.style }}>
+      { popupEnabled && <div>
         <div
           className='speech-bubble'
           style={{
@@ -313,11 +304,11 @@ export default function Timeline(props) {
           }}
         >
           {customPopupContent ?
-            customPopupContent() :
+            customPopupContent :
             (<div>
-              <div className='line' style={{ backgroundColor: event.color || defaultColors[displayedEventId % defaultColors.length] }} />
-              <h1>{event.title}</h1>
-              <p className='summary'>{event.summary}</p>
+              <div className='line' style={{ backgroundColor: item.color || defaultColors[displayedItemId % defaultColors.length] }} />
+              <h1>{item.title}</h1>
+              <p className='summary'>{item.summary}</p>
             </div>)
           }
         </div>
@@ -337,7 +328,7 @@ export default function Timeline(props) {
         <div className='grid-lines' style={{ borderColor: timelineColor }}>
           {[...Array(numYears)].map((_, i) => (
             <div key={'seg' + i} className='major' style={{ borderColor: timelineColor }}>
-              {[...Array(3)].map((_, j) => (
+              {[...Array(numSegments)].map((_, j) => (
                 <div key={'subSeg' + j} className='minor' style={{ borderColor: timelineColor }} />
               ))}
               <span
@@ -347,7 +338,7 @@ export default function Timeline(props) {
             </div>
           ))}
         </div>
-        {eventLines}
+        {itemNodes}
       </div>
     </div>
   )
