@@ -292,7 +292,7 @@ export default function Timeline(props) {
 
   return (
     <div onMouseLeave={mouseLeave} ref={ref} style={{ ...props.style }}>
-      { popupEnabled && <div>
+      { popupEnabled && displayedItemId >= 0 && <div>
         <div
           className='speech-bubble'
           style={{
