@@ -42,7 +42,7 @@ Timeline.defaultProps = {
   customPopupContent: null,
   verticalGap: 15,
   timelineColor: 'black',
-  popupBackgroundColor: 'rgba(22, 22, 22, 0.4)',
+  popupBackgroundColor: null,
   popupDelay: 100,
   popupWidth: 400,
   lineThickness: 6,
@@ -64,7 +64,7 @@ export default function Timeline(props) {
     lineThickness
   } = props
   // seperated hoveredId and displayedItemId. hoveredId for making the
-  // hovering items more responsive. displayedItemId for popup delay.
+  // hovering items more responsive. displayedItemId for handling popup delay.
   const [hoveredId, setHoveredId] = useState(-1)
   const [displayedItemId, setDisplayedItemId] = useState(-1)
   const [firstYear, setFirstYear] = useState(null)
@@ -74,6 +74,8 @@ export default function Timeline(props) {
   const [open, setOpen] = useState(false)
   const [arrowPos, setArrowPos] = useState(50)
   const [popupPos, setPopupPos] = useState(50)
+  const [itemElements, setItemElements] = useState({})
+  const [touchedId, setTouchedId] = useState(-2)
   const ref = useRef(null)
 
   const defaultColors = [
@@ -125,24 +127,28 @@ export default function Timeline(props) {
 
   const itemHover = (i, leftPct, rightPct, color) => {
     if (!isInteractive) return //no op
-
     const openPopup = () => {
       setDisplayedItemId(i)
-      let midPoint = (r+l)/2
+      let midPoint
+      if (!leftPct && !rightPct) {
+        midPoint = 50
+      }
+      else {
+        midPoint = (r+l) /2
+      }
       setArrowPos(midPoint)
-      setOpen(true)
+      setOpen(false)
+
+      if(timeoutRef.current) clearTimeout(timeoutRef.current)
+      timeoutRef.current = setTimeout(() => setOpen(true), 1)
+
       props.onItemDisplay(i, l, r, color)
     }
-
     if (i === hoveredId) return
+    setHoveredId(i)
     let l = leftPct
     let r = 100-rightPct
-    setHoveredId(i)
-    if (!popupEnabled || popupDelay === 0) {
-      openPopup()
-      return
-    }
-    if (displayedItemId < 0) {
+    if (!popupEnabled || popupDelay === 0 || displayedItemId < 0) {
       openPopup()
       return
     }
@@ -155,10 +161,24 @@ export default function Timeline(props) {
     if (!isInteractive) return //no op
     setHoveredId(-1)
     setOpen(false)
-    if(timeoutRef.current) clearTimeout(timeoutRef.current)
-    timeoutRef.current = setTimeout(() => setDisplayedItemId(-1), popupDelay)
-    if (props.onMouseLeave) props.onMouseLeave()
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    timeoutRef.current = setTimeout(() => {
+      setDisplayedItemId(-1)
+      props.onItemDisplay(-1)
+    }, popupDelay)
+    if (props.onMouseLeave) {
+      props.onMouseLeave()
+    }
   }
+
+  const determineTouchedItem = (e) => {
+    let el = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY)
+    setTouchedId(parseInt(el.id))
+  }
+
+  useEffect(() => {
+    itemHover(touchedId)
+  }, [touchedId])
 
   useEffect(() => {
     const timelineWidth = ref.current ? ref.current.offsetWidth : 0
@@ -174,7 +194,29 @@ export default function Timeline(props) {
     else {
       setPopupPos(arrowPos)
     }
-  }, [ref.current, arrowPos]);
+
+  }, [ref.current, arrowPos])
+
+  useEffect(() => {
+    if (!Object.keys(itemElements).length) {
+      let newItemElements = {}
+      for (let i=0; i < levels.length; i++) {
+        newItemElements[i] = document.querySelectorAll(`.item.level${i}`)
+      }
+      if (Object.keys(newItemElements).length) {
+        setItemElements(newItemElements)
+      }
+      return
+    }
+    // setup event listeners for mobile
+    ref.current.addEventListener('touchstart', determineTouchedItem)
+    ref.current.addEventListener('touchmove', determineTouchedItem)
+    // teardown event listeners for mobile
+    return () => {
+      ref.current.removeEventListener('touchstart', determineTouchedItem)
+      ref.current.removeEventListener('touchmove', determineTouchedItem)
+    }
+  }, [ref.current, itemElements])
 
   useEffect(() => {
     const conflicts = {}
@@ -272,7 +314,8 @@ export default function Timeline(props) {
       itemNodes.push(
         <div
           key={itemId}
-          className='item'
+          className={`item level${i}`}
+          id={itemId}
           style={{
             zIndex: 10-i,
             top: verticalGap*(levels.length-i-1),
@@ -282,45 +325,61 @@ export default function Timeline(props) {
             borderColor: `rgb(${r}, ${g}, ${b})`,
             backgroundColor:  hoveredId === itemId ? `rgba(${r},${g},${b},0.2)` : 'transparent'
           }}
-          onMouseEnter={() => itemHover(itemId, leftPct, rightPct, clr)}
+          onMouseEnter={(e) => {
+            itemHover(itemId, leftPct, rightPct, clr)
+          }}
         />
       )
     })
   }
 
-  let item = displayedItemId >= 0 ? items[displayedItemId] : {}
+  let r=0,g=0,b=0
+  const item = displayedItemId >= 0 ? items[displayedItemId] : { color: '#000000'}
+  if (!popupBackgroundColor) {
+    const currColor = item.color || defaultColors[displayedItemId % defaultColors.length]
+    const popupColor = currColor
+    let rgb = hexToRgb(popupColor)
+    r = rgb.r
+    g = rgb.g
+    b = rgb.b
+  }
 
   return (
     <div onMouseLeave={mouseLeave} ref={ref} style={{ ...props.style }}>
-      { popupEnabled && displayedItemId >= 0 && <div>
+      { popupEnabled && displayedItemId >= 0 &&
         <div
           className='speech-bubble'
           style={{
-            left: popupPos+'%',
-            backgroundColor: popupBackgroundColor,
-            transform: open ? 'translateX(-50%) scale(1)' : 'translateX(-50%) scale(0)',
-            width: popupWidth+'px',
-            transition: `transform ${popupDelay}ms ease`
+            transition: `transform ${popupDelay}ms ease`,
+            transform: open ? 'scale(1)' : 'scale(0)'
           }}
         >
-          {customPopupContent ?
-            customPopupContent :
-            (<div>
-              <div className='line' style={{ backgroundColor: item.color || defaultColors[displayedItemId % defaultColors.length] }} />
-              <h1>{item.title}</h1>
-              <p className='summary'>{item.summary}</p>
-            </div>)
-          }
+          <div
+            className='speech-bubble-content'
+            style={{
+              left: popupPos+'%',
+              backgroundColor: popupBackgroundColor || `rgba(${r},${g},${b},0.1)`,
+              width: popupWidth+'px'
+            }}
+          >
+            {customPopupContent ?
+              customPopupContent :
+              (<div>
+                <div className='line' style={{ backgroundColor: item.color || defaultColors[displayedItemId % defaultColors.length] }} />
+                <h1>{item.title}</h1>
+                <p className='summary'>{item.summary}</p>
+              </div>)
+            }
+          </div>
+          <div
+            className='arrow'
+            style={{
+              marginLeft: arrowPos+'%',
+              borderTopColor: popupBackgroundColor || `rgba(${r},${g},${b},0.1)`,
+            }}
+          />
         </div>
-        <div
-          className='arrow'
-          style={{
-            marginLeft: arrowPos+'%',
-            transform: open ? 'translateX(-50%) scale(1)' : 'translateX(-50%) scale(0)',
-            transition: `transform ${popupDelay}ms ease`
-          }}
-        />
-      </div> }
+      }
       <div
         className='timeline'
         style={{ height: containerHeight }}
@@ -334,7 +393,9 @@ export default function Timeline(props) {
               <span
                 className='year'
                 style={{ color: timelineColor }}
-              >{firstYear + i}</span>
+              >
+                {firstYear + i}
+              </span>
             </div>
           ))}
         </div>

@@ -26,8 +26,7 @@ export default function App() {
       title: 'Graduate School',
       summary: 'Learned some super useful things',
       start: { year: 2012, month: 2 },
-      end: { year: 2016, month: 8 },
-      technologiesUsed: 'yeet'
+      end: { year: 2016, month: 8 }
     }
   ]
 
@@ -56,7 +55,9 @@ export default function App() {
           lineThickness={4}
           timelineColor={'white'}
           style={{ fontFamily: "sans-serif" }}
+          popupDelay={150}
           popupWidth={300}
+          popupBackgroundColor={'rgba(22,22,22,0.4)'}
         />
       </div>
     </div>

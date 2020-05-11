@@ -5,6 +5,7 @@
   flex-direction: column;
   justify-content: flex-end;
   position: relative;
+  touch-action: none;
 }
 
 .grid-lines {
@@ -49,21 +50,25 @@
 }
 
 .speech-bubble {
+  transform: scaleY(0);
+  transform-origin: bottom;
+}
+
+.speech-bubble-content {
   padding: 5px;
   border-radius: 10px;
   display: flex;
   flex-direction: column;
   position: relative;
-  transform: translateX(-50%) scaleY(0);
+  transform: translateX(-50%);
   transform-origin: bottom;
 }
 
 .arrow {
   border: solid 15px transparent;
-  border-top-color: rgba(22, 22, 22, 0.4);
   margin-right: auto;
   width: 0;
-  transform: translateX(-50%) scaleY(0);
+  transform: translateX(-50%);
   transform-origin: top;
 }
 
