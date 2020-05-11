@@ -13,7 +13,7 @@ export default function App() {
     {
       title: 'Employment2',
       summary: 'Did some even cooler stuff',
-      start: { year: 2014, month: 5 },
+      start: { year: 2014, month: 4 },
       end: { year: 2015, month: 12 }
     },
     {

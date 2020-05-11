@@ -173,7 +173,7 @@ export default function Timeline(props) {
 
   const determineTouchedItem = (e) => {
     let el = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY)
-    setTouchedId(parseInt(el.id))
+    setTouchedId(el.className.indexOf('item') >= 0 ? parseInt(el.id) : -1)
   }
 
   useEffect(() => {
@@ -199,7 +199,7 @@ export default function Timeline(props) {
 
   useEffect(() => {
     if (!Object.keys(itemElements).length) {
-      let newItemElements = {}
+      const newItemElements = {}
       for (let i=0; i < levels.length; i++) {
         newItemElements[i] = document.querySelectorAll(`.item.level${i}`)
       }
@@ -242,13 +242,13 @@ export default function Timeline(props) {
     setFirstYear(fy)
     setLastYear(ly)
 
-    let order = Object.keys(conflicts).map(itemId => ({
+    const order = Object.keys(conflicts).map(itemId => ({
       itemId: parseInt(itemId)
     })).sort((a,b) => {
-      let itemA = items[a.itemId]
-      let itemB = items[b.itemId]
-      let spanA = (itemA.end.year*12+itemA.end.month) - (itemA.start.year*12+itemA.start.month)
-      let spanB = (itemB.end.year*12+itemB.end.month) - (itemB.start.year*12+itemB.start.month)
+      const itemA = items[a.itemId]
+      const itemB = items[b.itemId]
+      const spanA = (itemA.end.year*12+itemA.end.month) - (itemA.start.year*12+itemA.start.month)
+      const spanB = (itemB.end.year*12+itemB.end.month) - (itemB.start.year*12+itemB.start.month)
       return spanA - spanB
     })
 
@@ -274,7 +274,7 @@ export default function Timeline(props) {
           nextToAdd = order[j].itemId
           break
         }
-        let currId = order[j].itemId
+        const currId = order[j].itemId
         if (!levelsArray[i].some(item => {
           return conflicts[item].indexOf(currId) > -1
         })) {
@@ -297,9 +297,9 @@ export default function Timeline(props) {
   }, [levels, verticalGap])
 
 
-  let numYears = lastYear - firstYear + 1
-  let totalMonths = numYears * 12
-  let itemNodes = []
+  const numYears = lastYear - firstYear + 1
+  const totalMonths = numYears * 12
+  const itemNodes = []
 
   for (let i=0; i < levels.length; i++) {
     levels[i].forEach(itemId => {
